@@ -87,11 +87,6 @@ Both models utilize identical hyperparameter configurations and XGBoost architec
 
 The system employs a maximum probability ensemble strategy for inference. Predictions from both models are combined by taking the maximum probability score, effectively flagging instances when either model indicates high anomaly probability. This approach prioritizes recall while maintaining precision through complementary model perspectives.
 
-**Ensemble Performance (at 0.20 threshold):**
-- Recall: 53.2%
-- Precision: 45.3%
-- F1 Score: 0.489
-- Total Flagged: 254 instances
 
 ### Model Evaluation
 
