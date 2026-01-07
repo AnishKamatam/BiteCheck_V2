@@ -13,7 +13,6 @@ def load_and_merge_data():
     for file in before_files:
         df = pd.read_csv(file, low_memory=False)
         before_cleaned.append(clean(df, verbose=False))
-    
 
     # Load and clean all After files
     after_files = sorted(data_folder.glob("After*.csv"))
@@ -21,20 +20,16 @@ def load_and_merge_data():
     for file in after_files:
         df = pd.read_csv(file, low_memory=False)
         after_cleaned.append(clean(df, verbose=False))
-    
 
-    # Merge all cleaned datasets
+    # Merge all Before and After files separately
     before_all_merged = pd.concat(before_cleaned, ignore_index=True)
     after_all_merged = pd.concat(after_cleaned, ignore_index=True)
-    
 
-    # Merge: features from Before, label from After
+    # Merge Before features with After labels on GTIN
     before_features = before_all_merged.drop(columns=["label_is_anomaly"], errors="ignore")
     after_label = after_all_merged[["gtin", "label_is_anomaly"]]
     merged = pd.merge(before_features, after_label, on="gtin", how="inner")
-    
 
-    # Save merged datasets
     before_all_merged.to_csv(data_folder / "before_all_cleaned.csv", index=False)
     after_all_merged.to_csv(data_folder / "after_all_cleaned.csv", index=False)
     merged.to_csv(data_folder / "merged.csv", index=False)

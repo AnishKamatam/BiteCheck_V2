@@ -9,7 +9,6 @@ from pathlib import Path
 
 def objective(trial):
     # Optuna objective function for hyperparameter optimization
-    # Uses: text embeddings + nutrient columns + engineered features
     data_path = Path(__file__).parent.parent / "Data" / "PostOpData" / "merged_embedded.parquet"
     df = pd.read_parquet(data_path)
     
@@ -18,8 +17,6 @@ def objective(trial):
     
     X_train, X_val, y_train, y_val = train_test_split(X, y, test_size=0.2, random_state=42, stratify=y)
 
-
-    # Define hyperparameter search space
     params = {
         'n_estimators': trial.suggest_int('n_estimators', 100, 1000),
         'max_depth': trial.suggest_int('max_depth', 3, 10),
@@ -33,13 +30,9 @@ def objective(trial):
         'scale_pos_weight': (len(y) - sum(y)) / sum(y)
     }
 
-
-    # Train model
     model = xgb.XGBClassifier(**params)
     model.fit(X_train, y_train, eval_set=[(X_val, y_val)], verbose=False)
 
-
-    # Evaluate using Average Precision (best metric for rare anomalies)
     preds_proba = model.predict_proba(X_val)[:, 1]
     score = average_precision_score(y_val, preds_proba)
     
@@ -59,7 +52,6 @@ if __name__ == "__main__":
         for key, value in study.best_params.items():
             print(f"  {key}: {value}")
 
-        # Save best parameters for training
         models_dir = Path(__file__).parent.parent / "models"
         models_dir.mkdir(exist_ok=True)
         params_path = models_dir / "best_hyperparams.json"

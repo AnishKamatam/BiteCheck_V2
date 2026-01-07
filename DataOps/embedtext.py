@@ -11,13 +11,11 @@ NUTRIENT_COLS = [
     "total_sugars", "added_sugars", "protein", "potassium",
 ]
 
-# Columns to keep in final dataset: text embeddings + nutrients + engineered features + label
 COLS_TO_KEEP = TEXT_COLS + NUTRIENT_COLS + FEATURE_COLS + ["label_is_anomaly", "gtin"]
 
 
 def embed_text_data():
     # Embeds text columns using SentenceTransformer and saves as Parquet
-    # Keeps: text embeddings, nutrient columns, engineered features, and label_is_anomaly
     data_folder = Path(__file__).parent.parent / "Data" / "PreOpDataCSV"
     merged_file = data_folder / "merged.csv"
     
@@ -25,16 +23,15 @@ def embed_text_data():
     df = pd.read_csv(merged_file)
     print(f"Loaded {len(df):,} rows")
     
-    # Select only the columns we need: TEXT_COLS + NUTRIENT_COLS + FEATURE_COLS + label + gtin
+    # Select only relevant columns
     available_cols = [c for c in COLS_TO_KEEP if c in df.columns]
     df = df[available_cols].copy()
     print(f"Selected {len(available_cols)} columns")
     
-    # Initialize SentenceTransformer model
+    # Embed text columns using SentenceTransformer
     print("Loading SentenceTransformer model...")
     model = SentenceTransformer('all-MiniLM-L6-v2')
     
-    # Embed each text column (creates 384 numeric features per column)
     for col in TEXT_COLS:
         if col in df.columns:
             print(f"Embedding {col}...")
@@ -45,20 +42,19 @@ def embed_text_data():
             df = pd.concat([df, embedding_df], axis=1)
             print(f"  Added {len(embedding_cols)} embedding columns for {col}")
     
-    # Drop original text columns (keep only embeddings)
+    # Remove original text columns after embedding
     df = df.drop(columns=TEXT_COLS, errors="ignore")
     
-    # Fill NaN in nutrient columns with -1
+    # Fill missing nutrient values with -1
     for col in NUTRIENT_COLS:
         if col in df.columns:
             df[col] = df[col].fillna(-1)
     
-    # Fill NaN in engineered feature columns with 0 (they should already exist from cleaning)
+    # Fill missing engineered features with 0
     for col in FEATURE_COLS:
         if col in df.columns:
             df[col] = df[col].fillna(0)
     
-    # Verify we have: embeddings + nutrients + engineered features + label + gtin
     final_cols = df.columns.tolist()
     print(f"\nFinal feature set:")
     print(f"  Text embeddings: {len([c for c in final_cols if '_emb_' in c])} features")
@@ -68,7 +64,6 @@ def embed_text_data():
     print(f"  ID column: {'gtin' if 'gtin' in final_cols else 'MISSING'}")
     print(f"  Total columns: {len(final_cols)}")
     
-    # Save as Parquet file
     output_folder = Path(__file__).parent.parent / "Data" / "PostOpData"
     output_folder.mkdir(parents=True, exist_ok=True)
     output_file = output_folder / "merged_embedded.parquet"
